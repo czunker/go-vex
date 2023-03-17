@@ -32,8 +32,43 @@ type CSAF struct {
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#321-document-property
 type DocumentMetadata struct {
-	Title    string   `json:"title"`
-	Tracking Tracking `json:"tracking"`
+	// Aggregate severity is a vehicle that is provided by the document producer to convey the urgency and
+	// criticality with which the one or more vulnerabilities reported should be addressed.
+	//
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3212-document-property---aggregate-severity
+	AggregateSeverity Severity `json:"aggregate_severity"`
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3213-document-property---category
+	Category   string      `json:"category"`
+	Notes      []Note      `json:"notes"`
+	Title      string      `json:"title"`
+	Tracking   Tracking    `json:"tracking"`
+	References []Reference `json:"references"`
+}
+
+// Note with the mandatory properties category and text providing a place to put all manner of text blobs related to the current context.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#315-notes-type
+type Note struct {
+	Category string `json:"category"`
+	Text     string `json:"text"`
+	Title    string `json:"title,omitempty"`
+}
+
+// Document references holds a list of references associated with the whole document.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3219-document-property---references
+type Reference struct {
+	Category string `json:"category"`
+	Summary  string `json:"summary"`
+	URL      string `json:"url"`
+}
+
+// Severity with the mandatory property text and the optional property namespace is a vehicle that is provided by the document producer to convey the urgency and criticality with which the one or more vulnerabilities reported should be addressed.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3212-document-property---aggregate-severity
+type Severity struct {
+	Namespace string `json:"namespace,omitempty"`
+	Text      string `json:"text"`
 }
 
 // Tracking contains information used to track the CSAF document through its lifecycle.
@@ -42,6 +77,7 @@ type DocumentMetadata struct {
 type Tracking struct {
 	ID                 string    `json:"id"`
 	CurrentReleaseDate time.Time `json:"current_release_date"`
+	InitialReleaseDate time.Time `json:"initial_release_date"`
 }
 
 // Vulnerability contains information about a CVE and its associated threats.
@@ -53,6 +89,16 @@ type Vulnerability struct {
 	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3232-vulnerabilities-property---cve
 	CVE string `json:"cve"`
 
+	// The MITRE standard Common Weakness Enumeration (CWE) for the weakness associated.
+	//
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3233-vulnerabilities-property---cwe
+	CWE CWEInfo `json:"cwe"`
+
+	// List of IDs represents a list of unique labels or tracking IDs for the vulnerability (if such information exists).
+	//
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3236-vulnerabilities-property---ids
+	IDs []TrackingID `json:"ids"`
+
 	// Provide details on the status of the referenced product related to the vulnerability.
 	//
 	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3239-vulnerabilities-property---product-status
@@ -62,6 +108,96 @@ type Vulnerability struct {
 	//
 	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32314-vulnerabilities-property---threats
 	Threats []ThreatData `json:"threats"`
+
+	// Vulnerability references holds a list of references associated with this vulnerability item.
+	//
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32310-vulnerabilities-property---references
+	References []Reference `json:"references"`
+
+	ReleaseDate time.Time `json:"release_date"`
+
+	// Holds a list of score objects for the current vulnerability.
+	//
+	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32313-vulnerabilities-property---scores
+	Scores []Score `json:"scores"`
+}
+
+// The MITRE standard Common Weakness Enumeration (CWE) for the weakness associated.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3233-vulnerabilities-property---cwe
+type CWEInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type Score struct {
+	Products []string      `json:"products"`
+	CVSSV3   *CVSSV3Schema `json:"cvss_v3,omitempty"`
+	CVSSV2   *CVSSV2Schema `json:"cvss_v2,omitempty"`
+}
+
+type CVSSV3Schema struct {
+	Version                       string  `json:"version"`
+	VectorString                  string  `json:"vectorString"`
+	BaseScore                     float64 `json:"baseScore"`
+	BaseSeverity                  string  `json:"baseSeverity"`
+	AttackVector                  string  `json:"attackVector,omitempty"`
+	AttackComplexity              string  `json:"attackComplexity,omitempty"`
+	PrivilegesRequired            string  `json:"privilegesRequired,omitempty"`
+	UserInteraction               string  `json:"userInteraction,omitempty"`
+	Scope                         string  `json:"scope,omitempty"`
+	ConfidentialityImpact         string  `json:"confidentialityImpact,omitempty"`
+	IntegrityImpact               string  `json:"integrityImpact,omitempty"`
+	AvailabilityImpact            string  `json:"availabilityImpact,omitempty"`
+	ExploitCodeMaturity           string  `json:"exploitCodeMaturity,omitempty"`
+	RemediationLevel              string  `json:"remediationLevel,omitempty"`
+	ReportConfidence              string  `json:"reportConfidence,omitempty"`
+	TemporalScore                 float64 `json:"temporalScore,omitempty"`
+	TemporalSeverity              string  `json:"temporalSeverity,omitempty"`
+	ConfidentialityRequirement    string  `json:"confidentialityRequirement,omitempty"`
+	IntegrityRequirement          string  `json:"integrityRequirement,omitempty"`
+	AvailabilityRequirement       string  `json:"availabilityRequirement,omitempty"`
+	ModifiedAttackVector          string  `json:"modifiedAttackVector,omitempty"`
+	ModifiedAttackComplexity      string  `json:"modifiedAttackComplexity,omitempty"`
+	ModifiedPrivilegesRequired    string  `json:"modifiedPrivilegesRequired,omitempty"`
+	ModifiedUserInteraction       string  `json:"modifiedUserInteraction,omitempty"`
+	ModifiedScope                 string  `json:"modifiedScope,omitempty"`
+	ModifiedConfidentialityImpact string  `json:"modifiedConfidentialityImpact,omitempty"`
+	ModifiedIntegrityImpact       string  `json:"modifiedIntegrityImpact,omitempty"`
+	ModifiedAvailabilityImpact    string  `json:"modifiedAvailabilityImpact,omitempty"`
+	EnvironmentalScore            float64 `json:"environmentalScore,omitempty"`
+	EnvironmentalSeverity         string  `json:"environmentalSeverity,omitempty"`
+}
+
+type CVSSV2Schema struct {
+	Version                    string  `json:"version"`
+	VectorString               string  `json:"vectorString"`
+	BaseScore                  float64 `json:"baseScore"`
+	BaseSeverity               string  `json:"baseSeverity"`
+	AccessVector               string  `json:"accessVector,omitempty"`
+	AccessComplexity           string  `json:"accessComplexity,omitempty"`
+	Authentication             string  `json:"authentication,omitempty"`
+	ConfidentialityImpact      string  `json:"confidentialityImpact,omitempty"`
+	IntegrityImpact            string  `json:"integrityImpact,omitempty"`
+	AvailabilityImpact         string  `json:"availabilityImpact,omitempty"`
+	Exploitability             string  `json:"exploitability,omitempty"`
+	RemediationLevel           string  `json:"remediationLevel,omitempty"`
+	ReportConfidence           string  `json:"reportConfidence,omitempty"`
+	TemporalScore              float64 `json:"temporalScore,omitempty"`
+	CollateralDamagePotential  string  `json:"collateralDamagePotential,omitempty"`
+	TargetDistribution         string  `json:"targetDistribution,omitempty"`
+	ConfidentialityRequirement string  `json:"confidentialityRequirement,omitempty"`
+	IntegrityRequirement       string  `json:"integrityRequirement,omitempty"`
+	AvailabilityRequirement    string  `json:"availabilityRequirement,omitempty"`
+	EnvironmentalScore         float64 `json:"environmentalScore,omitempty"`
+}
+
+// Every ID item with the two mandatory properties System Name (system_name) and Text (text) contains a single unique label or tracking ID for the vulnerability.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3236-vulnerabilities-property---ids
+type TrackingID struct {
+	SystemName string `json:"system_name"`
+	Text       string `json:"text"`
 }
 
 // ThreatData contains information about a threat to a product.
@@ -132,6 +268,28 @@ func (branch *ProductBranch) FindFirstProduct() string {
 	// Recursively search for the first product	identifier
 	for _, b := range branch.Branches {
 		if p := b.FindFirstProduct(); p != "" {
+			return p
+		}
+	}
+
+	return ""
+}
+
+// FindFirstProductName recursively searches for the first product name in the tree
+// and returns it or an empty string if no product name is found.
+func (branch *ProductBranch) FindFirstProductName() string {
+	if branch.Product.Name != "" {
+		return branch.Product.Name
+	}
+
+	// No nested branches
+	if branch.Branches == nil {
+		return ""
+	}
+
+	// Recursively search for the first product	identifier
+	for _, b := range branch.Branches {
+		if p := b.FindFirstProductName(); p != "" {
 			return p
 		}
 	}
